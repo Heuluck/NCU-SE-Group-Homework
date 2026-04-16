@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Space, Switch, Tag, Popconfirm, message, Typography, Card, Table } from "antd";
+import { Button, Input, Space, Tag, Popconfirm, message, Typography, Card, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import api from "../lib/api";
 import type { Task } from "../types";
@@ -10,7 +10,6 @@ export function TasksPanel() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [value, setValue] = useState("");
-  const [mockEnabled, setMockEnabled] = useState<boolean>(api.isMockEnabled());
 
   useEffect(() => {
     refresh();
@@ -67,13 +66,7 @@ export function TasksPanel() {
     }
   }
 
-  function toggleMock(v: boolean) {
-    api.setMockEnabled(v);
-    setMockEnabled(v);
-    message.info(v ? "已启用 Mock 模式" : "已切换为真实 API 模式");
-    // reload tasks from selected backend
-    refresh();
-  }
+  // mock switch removed — always use configured API (Prism in dev)
 
   return (
     <Card style={{ width: "100%", maxWidth: 900 }}>
@@ -81,11 +74,7 @@ export function TasksPanel() {
         <Space style={{ justifyContent: "space-between", width: "100%" }}>
           <Space>
             <Text strong>任务面板</Text>
-            <Text type="secondary">(支持 Mock / 实时 API 切换)</Text>
-          </Space>
-          <Space>
-            <Text>Mock</Text>
-            <Switch checked={mockEnabled} onChange={toggleMock} />
+            <Text type="secondary">(与后端 API 对接)</Text>
           </Space>
         </Space>
 
