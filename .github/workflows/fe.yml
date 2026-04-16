@@ -19,6 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: |
+          npm install -g corepack
+          corepack enable
+          # 根据 package.json 强制安装特定版本的 pnpm (若有的话)
+          corepack prepare pnpm@latest --activate
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -29,8 +36,6 @@ jobs:
       - name: Build dist
         working-directory: fe
         run: |
-          npm install -g corepack
-          corepack enable
           pnpm install
           pnpm build
 
