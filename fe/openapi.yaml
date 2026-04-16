@@ -6,8 +6,10 @@ info:
     OpenAPI 3.0 specification for the frontend mock API used by the FE.
     Contains examples for use with Prism (https://stoplight.io/open-source/prism).
 servers:
+  - url: http://127.0.0.1:4010
+    description: Prism mock server (local)
   - url: http://localhost:3000
-    description: Local dev server (Prism mock)
+    description: Local dev server
 
 paths:
   /tasks:
@@ -72,6 +74,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                invalid_input:
+                  value:
+                    code: "invalid_input"
+                    message: "请求体缺少字段：content"
 
   /tasks/{id}:
     parameters:
@@ -104,6 +111,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                not_found:
+                  value:
+                    code: "not_found"
+                    message: "任务未找到"
     delete:
       summary: Delete a task by ID
       operationId: deleteTask
@@ -116,6 +128,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                not_found:
+                  value:
+                    code: "not_found"
+                    message: "任务未找到"
 
   /tasks/{id}/complete:
     post:
@@ -148,6 +165,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                not_found:
+                  value:
+                    code: "not_found"
+                    message: "任务未找到"
 
 components:
   schemas:

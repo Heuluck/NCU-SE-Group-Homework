@@ -3,6 +3,9 @@ import { Button, Input, Space, Tag, Popconfirm, message, Typography, Card, Table
 import type { ColumnsType } from "antd/es/table";
 import api from "../lib/api";
 import type { Task } from "../types";
+import TaskFilter from "./TaskFilter";
+import Pagination from "./Pagination";
+import { showError } from "./ErrorToast";
 
 const { Text } = Typography;
 
@@ -10,19 +13,25 @@ export function TasksPanel() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [value, setValue] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [filter, setFilter] = useState<string>("all");
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     refresh();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, page, pageSize]);
 
   async function refresh() {
     setLoading(true);
     try {
-      const res = await api.getTasks();
-      setTasks(res);
+      const res = await api.fetchTasks({ status: filter, page, size: pageSize });
+      setTasks(res.items);
+      setTotal(res.total);
     } catch (err) {
       console.error(err);
-      message.error("加载任务失败");
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -37,32 +46,36 @@ export function TasksPanel() {
       const t = await api.addTask(value.trim());
       setValue("");
       message.success("已添加任务");
-      setTasks((s) => [...s, t]);
+      // refresh to reflect filter/pagination
+      setPage(1);
+      await refresh();
     } catch (err) {
       console.error(err);
-      message.error("添加失败");
+      showError(err);
     }
   }
 
   async function handleComplete(id: number) {
     try {
       const t = await api.completeTask(id);
-      setTasks((s) => s.map((x) => (x.id === id ? t : x)));
+      // refresh current page
+      await refresh();
       message.success("标记已完成");
     } catch (err) {
       console.error(err);
-      message.error("标记失败");
+      showError(err);
     }
   }
 
   async function handleDelete(id: number) {
     try {
       await api.deleteTask(id);
-      setTasks((s) => s.filter((x) => x.id !== id));
+      // refresh current page
+      await refresh();
       message.success("已删除");
     } catch (err) {
       console.error(err);
-      message.error("删除失败");
+      showError(err);
     }
   }
 
@@ -78,17 +91,22 @@ export function TasksPanel() {
           </Space>
         </Space>
 
-        <Space style={{ width: "100%" }}>
-          <Input
-            placeholder="新任务内容，按回车或点击添加"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onPressEnter={handleAdd}
-          />
-          <Button type="primary" onClick={handleAdd}>
-            添加
-          </Button>
-          <Button onClick={refresh}>刷新</Button>
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space style={{ flex: 1 }}>
+            <Input
+              placeholder="新任务内容，按回车或点击添加"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onPressEnter={handleAdd}
+            />
+            <Button type="primary" onClick={handleAdd}>
+              添加
+            </Button>
+            <Button onClick={refresh}>刷新</Button>
+          </Space>
+          <Space>
+            <TaskFilter value={filter} onChange={(v) => { setFilter(v); setPage(1); }} />
+          </Space>
         </Space>
 
         <Table<Task>
@@ -143,6 +161,16 @@ export function TasksPanel() {
               return cols;
             })()
           )}
+        />
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={async (p, size) => {
+            setPage(p);
+            if (size && size !== pageSize) setPageSize(size);
+            await refresh();
+          }}
         />
       </Space>
     </Card>
