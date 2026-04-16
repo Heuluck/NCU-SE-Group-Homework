@@ -3,6 +3,9 @@ name: Deploy FE Page
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'fe/**'
+      - '.github/workflows/fe.yml'
 
 permissions:
   contents: write
