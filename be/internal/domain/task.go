@@ -7,13 +7,16 @@ import (
 )
 
 const (
+	Pending   = "pending"
+	Completed = "completed"
 	StatusPending   = "pending"
 	StatusCompleted = "completed"
 )
 
 var (
-	ErrEmptyContent = errors.New("task content is required")
-	ErrAlreadyDone  = errors.New("task is already completed")
+	ErrEmptyContent  = errors.New("task content is required")
+	ErrAlreadyDone   = errors.New("task is already completed")
+	ErrTaskNotFound = errors.New("task not found")
 )
 
 type Task struct {
