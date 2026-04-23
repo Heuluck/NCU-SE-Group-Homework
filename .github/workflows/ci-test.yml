@@ -2,8 +2,9 @@ name: CI — Test & Build
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: ["main", "feat/**", "fix/**"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   backend-test:
