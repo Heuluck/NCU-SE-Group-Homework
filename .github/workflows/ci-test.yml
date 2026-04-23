@@ -2,9 +2,17 @@ name: CI — Test & Build
 
 on:
   push:
-    branches: ["main", "feat/**", "fix/**"]
+    branches: ["main"]
+    paths:
+      - 'fe/**'
+      - 'be/**'
+      - '.github/workflows/ci-test.yml'
   pull_request:
     branches: ["main"]
+    paths:
+      - 'fe/**'
+      - 'be/**'
+      - '.github/workflows/ci-test.yml'
 
 jobs:
   backend-test:
