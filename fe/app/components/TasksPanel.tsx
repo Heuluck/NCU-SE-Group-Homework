@@ -83,7 +83,7 @@ export function TasksPanel() {
 
   return (
     <Card style={{ width: "100%", maxWidth: 900 }}>
-      <Space direction="vertical" style={{ width: "100%" }}>
+      <Space orientation="vertical" style={{ width: "100%" }}>
         <Space style={{ justifyContent: "space-between", width: "100%" }}>
           <Space>
             <Text strong>任务面板</Text>

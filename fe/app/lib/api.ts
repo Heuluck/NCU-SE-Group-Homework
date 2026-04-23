@@ -2,7 +2,7 @@ import axios from "axios";
 import type { Task } from "../types";
 import { ApiEndpoints } from "../types";
 
-const PRISM_DEFAULT = "http://127.0.0.1:4010";
+const PRISM_DEFAULT = "http://127.0.0.1:8080";
 const env = (import.meta as any).env || {};
 const isDev = Boolean(env.DEV);
 const envBase = env.VITE_API_BASE_URL || "";
