@@ -79,6 +79,149 @@ func TestMissingTaskReturns404(t *testing.T) {
 	}
 }
 
+func TestAlreadyCompletedTaskReturns409(t *testing.T) {
+	handler := newTestServer(t)
+
+	// Create and complete a task
+	createReq := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBufferString(`{"content":"done"}`))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRes := httptest.NewRecorder()
+	handler.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatal("failed to create task")
+	}
+
+	completeReq := httptest.NewRequest(http.MethodPost, "/tasks/1/complete", nil)
+	completeRes := httptest.NewRecorder()
+	handler.ServeHTTP(completeRes, completeReq)
+	if completeRes.Code != http.StatusOK {
+		t.Fatal("failed to complete task")
+	}
+
+	// Try to complete again — should return 409 Conflict
+	againReq := httptest.NewRequest(http.MethodPost, "/tasks/1/complete", nil)
+	againRes := httptest.NewRecorder()
+	handler.ServeHTTP(againRes, againReq)
+	if againRes.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409 Conflict, body = %s", againRes.Code, againRes.Body.String())
+	}
+}
+
+func TestInvalidJSONBodyReturns400(t *testing.T) {
+	handler := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBufferString(`not json`))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 Bad Request, body = %s", res.Code, res.Body.String())
+	}
+}
+
+func TestGetTaskByID(t *testing.T) {
+	handler := newTestServer(t)
+
+	// Create a task
+	createReq := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBufferString(`{"content":"fetch me"}`))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRes := httptest.NewRecorder()
+	handler.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatal("failed to create task")
+	}
+
+	// Fetch by ID
+	getReq := httptest.NewRequest(http.MethodGet, "/tasks/1", nil)
+	getRes := httptest.NewRecorder()
+	handler.ServeHTTP(getRes, getReq)
+	if getRes.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 OK, body = %s", getRes.Code, getRes.Body.String())
+	}
+
+	var task domain.Task
+	if err := json.NewDecoder(getRes.Body).Decode(&task); err != nil {
+		t.Fatal(err)
+	}
+	if task.Content != "fetch me" || task.Status != domain.StatusPending {
+		t.Fatalf("unexpected task: %+v", task)
+	}
+}
+
+func TestHealthzEndpoint(t *testing.T) {
+	handler := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 OK, body = %s", res.Code, res.Body.String())
+	}
+}
+
+func TestCORSHeaders(t *testing.T) {
+	handler := newTestServer(t)
+
+	// Preflight request
+	req := httptest.NewRequest(http.MethodOptions, "/tasks", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusNoContent {
+		t.Fatalf("OPTIONS status = %d, want 204 No Content", res.Code)
+	}
+
+	allowOrigin := res.Header().Get("Access-Control-Allow-Origin")
+	allowMethods := res.Header().Get("Access-Control-Allow-Methods")
+	if allowOrigin == "" || allowMethods == "" {
+		t.Fatalf("missing CORS headers: Origin=%s, Methods=%s", allowOrigin, allowMethods)
+	}
+}
+
+func TestMethodNotAllowedForTasksEndpoint(t *testing.T) {
+	handler := newTestServer(t)
+
+	// PUT should return 405
+	req := httptest.NewRequest(http.MethodPut, "/tasks", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status = %d, want 405 Method Not Allowed", res.Code)
+	}
+}
+
+func TestDeleteTask(t *testing.T) {
+	handler := newTestServer(t)
+
+	// Create a task
+	createReq := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBufferString(`{"content":"to delete"}`))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRes := httptest.NewRecorder()
+	handler.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatal("failed to create task")
+	}
+
+	// Delete it
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/tasks/1", nil)
+	deleteRes := httptest.NewRecorder()
+	handler.ServeHTTP(deleteRes, deleteReq)
+	if deleteRes.Code != http.StatusNoContent {
+		t.Fatalf("delete status = %d, want 204 No Content, body = %s", deleteRes.Code, deleteRes.Body.String())
+	}
+
+	// Verify it's gone
+	getReq := httptest.NewRequest(http.MethodGet, "/tasks/1", nil)
+	getRes := httptest.NewRecorder()
+	handler.ServeHTTP(getRes, getReq)
+	if getRes.Code != http.StatusNotFound {
+		t.Fatalf("get after delete status = %d, want 404 Not Found", getRes.Code)
+	}
+}
+
 func newTestServer(t *testing.T) http.Handler {
 	t.Helper()
 

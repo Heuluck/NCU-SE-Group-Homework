@@ -6,45 +6,52 @@ on:
     paths:
       - 'fe/**'
       - '.github/workflows/fe.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [22.20.0]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Enable Corepack
-        run: |
-          npm install -g corepack
-          corepack enable
-          # 根据 package.json 强制安装特定版本的 pnpm (若有的话)
-          corepack prepare pnpm@latest --activate
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
-          cache-dependency-path: fe/pnpm-lock.yaml
+          node-version: 22.20.0
+          package-manager-cache: false
 
-      - name: Build dist
-        working-directory: fe
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Project
+        env:
+          VITE_API_BASE_URL: ${{ vars.BASE_URL }}
         run: |
-          pnpm install
           pnpm build
 
-      - name: Deploy
-        uses: jamesives/github-pages-deploy-action@v4.6.1
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          branch: fe-gh-pages
-          folder: fe/build/client
-          clean: true
+          path: fe/build/client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v5
