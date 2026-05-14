@@ -22,7 +22,9 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /build/gophertodo .
-COPY --from=builder /build/data ./data
+
+# Create data directory for tasks.json at runtime
+RUN mkdir -p /app/data
 
 # Use external data file path via env var with fallback
 ENV DATA_FILE=/app/data/tasks.json
