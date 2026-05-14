@@ -61,19 +61,21 @@ jobs:
       run:
         working-directory: fe
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: "22.20.0"
+          node-version: 22.20.0
+          package-manager-cache: false
 
-      - name: Enable corepack (pnpm)
-        run: corepack enable
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          cache: true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Run tests
         run: pnpm test
@@ -85,19 +87,21 @@ jobs:
       run:
         working-directory: fe
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: "22.20.0"
+          node-version: 22.20.0
+          package-manager-cache: false
 
-      - name: Enable corepack (pnpm)
-        run: corepack enable
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          cache: true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Build
         run: pnpm build
