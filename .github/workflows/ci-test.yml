@@ -28,7 +28,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.23"
           cache: true
 
       - name: Download dependencies
@@ -53,6 +53,30 @@ jobs:
         with:
           name: go-coverage
           path: coverage.out
+
+  backend-integration-test:
+    name: Backend API Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: be
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run API integration tests
+        run: |
+          go test -v -tags=integration -count=1 -coverprofile=integration.out ./internal/httpapi/...
+          go tool cover -func=integration.out
 
   frontend-test:
     name: Frontend Tests (Vitest)
